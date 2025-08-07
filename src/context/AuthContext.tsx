@@ -27,7 +27,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = localStorage.getItem("token");
         
         if (storedToken) {
+          console.log("Token encontrado no localStorage");
+          
           const decoded = jwtDecode<JWTPayload>(storedToken);
+          console.log("Token decodificado:", decoded);
           
           const currentTime = Date.now() / 1000;
           if (decoded.exp && decoded.exp < currentTime) {
@@ -44,8 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             tipo_usuario: decoded.tipo_usuario,
           };
           
+          console.log("Usuário restaurado:", decodedUser);
+          
           setToken(storedToken);
           setUser(decodedUser);
+        } else {
+          console.log("Nenhum token encontrado");
         }
       } catch (error) {
         console.error("Erro ao inicializar autenticação:", error);
@@ -60,6 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (newToken: string, userData?: User) => {
     try {
+      console.log("=== EXECUTANDO LOGIN NO CONTEXTO ===");
+      
       let decodedUser: User;
 
       if (userData) {
@@ -74,18 +83,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
+      console.log("Salvando token e usuário:", decodedUser);
+      
       localStorage.setItem("token", newToken);
       setUser(decodedUser);
       setToken(newToken);
       
-      console.log("Login realizado com sucesso:", decodedUser);
     } catch (error) {
-      console.error("Erro no login:", error);
+      console.error("Erro no login do contexto:", error);
       throw new Error("Erro ao processar token de login");
     }
   };
 
   const logout = () => {
+    console.log("Executando logout");
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);

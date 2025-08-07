@@ -19,6 +19,13 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterValidation>({
     resolver: zodResolver(registerValidation),
+    defaultValues: {
+      nome: "",
+      email: "",
+      senha: "",
+      tipo_usuario: undefined,
+      senha_admin: ""
+    }
   });
 
   const router = useRouter();
@@ -33,11 +40,14 @@ export default function RegisterPage() {
     setSuccess("");
     
     try {
-      console.log("=== DEBUG CADASTRO ===");
-      console.log("Dados do formulário:", data);
-      console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+      console.log("=== INICIANDO CADASTRO ===");
+      console.log("Dados do formulário:", {
+        ...data,
+        senha: "***",
+        senha_admin: data.senha_admin ? "***" : undefined
+      });
       
-      const response = await registerUser(
+      await registerUser(
         data.nome,
         data.email,
         data.senha,
@@ -45,35 +55,15 @@ export default function RegisterPage() {
         data.senha_admin
       );
       
-      console.log("Resposta do cadastro:", response);
-      
-      setSuccess("Cadastro realizado com sucesso! Redirecionando...");
+      setSuccess("Cadastro realizado com sucesso! Redirecionando para o login...");
       
       setTimeout(() => {
         router.push("/login");
       }, 2000);
       
     } catch (error: any) {
-      console.error("=== ERRO DETALHADO ===");
-      console.error("Status:", error.response?.status);
-      console.error("Data:", error.response?.data);
-      console.error("Headers:", error.response?.headers);
-      console.error("Config:", error.config);
-      console.error("Erro completo:", error);
-      
-      if (error.response?.data?.message) {
-        setError(`Erro: ${error.response.data.message}`);
-      } else if (error.response?.data?.error) {
-        setError(`Erro: ${error.response.data.error}`);
-      } else if (error.response?.data) {
-        setError(`Erro: ${JSON.stringify(error.response.data)}`);
-      } else if (error.response?.status === 400) {
-        setError("Dados inválidos. Verifique as informações no console.");
-      } else if (error.response?.status === 409) {
-        setError("Email já cadastrado.");
-      } else {
-        setError(`Erro: ${error.message || "Erro desconhecido"}`);
-      }
+      console.error("=== ERRO NO CADASTRO ===", error);
+      setError(error.message || "Erro ao realizar cadastro");
     } finally {
       setIsLoading(false);
     }
@@ -84,67 +74,75 @@ export default function RegisterPage() {
       <h1 className="text-5xl">Cadastro</h1>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col items-center gap-2"
+        className="flex flex-col items-center gap-2 w-full max-w-md"
       >
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 w-full max-w-md text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 w-full text-center text-sm">
             {error}
           </div>
         )}
         
         {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 w-full max-w-md text-center">
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 w-full text-center text-sm">
             {success}
           </div>
         )}
         
         <input
           {...register("nome")}
-          placeholder="Nome"
+          placeholder="Nome completo"
           className="input-base"
           disabled={isLoading}
+          autoComplete="name"
         />
-        {errors.nome && <p className="text-red-500 text-sm">{errors.nome.message}</p>}
+        {errors.nome && <p className="text-red-500 text-sm w-full">{errors.nome.message}</p>}
         
         <input
           {...register("email")}
-          placeholder="Email"
+          type="email"
+          placeholder="seu@email.com"
           className="input-base"
           disabled={isLoading}
+          autoComplete="email"
         />
-        {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+        {errors.email && <p className="text-red-500 text-sm w-full">{errors.email.message}</p>}
         
         <input
           type="password"
           {...register("senha")}
-          placeholder="Senha"
+          placeholder="Sua senha (mín. 6 caracteres)"
           className="input-base"
           disabled={isLoading}
+          autoComplete="new-password"
         />
-        {errors.senha && <p className="text-red-500 text-sm">{errors.senha.message}</p>}
+        {errors.senha && <p className="text-red-500 text-sm w-full">{errors.senha.message}</p>}
         
         <select
           {...register("tipo_usuario")}
-          className="rounded-lg border-blue-300 border-solid border-2 p-2 w-full max-w-md"
+          className="input-base"
           disabled={isLoading}
-          defaultValue=""
         >
-          <option value="" disabled>Selecione o tipo</option>
-          <option value="usuario">Usuário</option>
-          <option value="admin">Admin</option>
+          <option value="">Selecione o tipo de usuário</option>
+          <option value="usuario">Usuário Comum</option>
+          <option value="admin">Administrador</option>
         </select>
-        {errors.tipo_usuario && <p className="text-red-500 text-sm">{errors.tipo_usuario.message}</p>}
+        {errors.tipo_usuario && <p className="text-red-500 text-sm w-full">{errors.tipo_usuario.message}</p>}
         
         {tipo_usuario === "admin" && (
           <>
             <input
               type="password"
               {...register("senha_admin")}
-              placeholder="Senha de administrador"
+              placeholder="Senha de administrador do sistema"
               className="input-base"
               disabled={isLoading}
+              autoComplete="new-password"
             />
-            {errors.senha_admin && <p className="text-red-500 text-sm">{errors.senha_admin.message}</p>}
+            <small className="text-gray-600 text-xs text-center w-full">
+              Esta é a senha especial de administrador configurada no sistema. 
+              Entre em contato com o administrador se não souber.
+            </small>
+            {errors.senha_admin && <p className="text-red-500 text-sm w-full">{errors.senha_admin.message}</p>}
           </>
         )}
         

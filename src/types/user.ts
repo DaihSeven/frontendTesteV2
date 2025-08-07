@@ -15,3 +15,11 @@ export interface JWTPayload {
   exp?: number;
   iat?: number; 
 }
+
+export interface RegisterData {
+  nome: string;
+  email: string;
+  senha: string;
+  tipo_usuario: TipoUsuario;
+  senha_admin?: string;
+}

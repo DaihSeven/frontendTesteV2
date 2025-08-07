@@ -9,7 +9,11 @@ import { loginUser } from "@/services/auth";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginValidation>({
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors } 
+  } = useForm<LoginValidation>({
     resolver: zodResolver(loginValidation),
   });
 
@@ -23,35 +27,26 @@ export default function LoginPage() {
     setError("");
     
     try {
-      console.log("Tentando login com:", data.email);
-      const res = await loginUser(data.email, data.senha);
+      console.log("=== INICIANDO LOGIN ===");
+      console.log("Email:", data.email);
       
-      console.log("Resposta do login:", res);
+      const response = await loginUser(data.email, data.senha);
       
-      if (!res.token) {
-        throw new Error("Token não recebido do servidor");
-      }
+      console.log("Login bem-sucedido:", response.usuario);
       
-      login(res.token, res.usuario);
+      // Usar a função login do contexto
+      login(response.token, response.usuario);
       
-      console.log("Usuário logado:", res.usuario);
-      
-      if (res.usuario?.tipo_usuario === 'admin') {
+      // Redirecionar baseado no tipo de usuário
+      if (response.usuario?.tipo_usuario === 'admin') {
         router.push("/dashboard");
       } else {
         router.push("/");
       }
       
     } catch (error: any) {
-      console.error("Erro no login:", error);
-      
-      if (error.response?.status === 401) {
-        setError("Email ou senha incorretos");
-      } else if (error.response?.status === 404) {
-        setError("Usuário não encontrado");
-      } else {
-        setError(error.message || "Erro ao fazer login. Tente novamente.");
-      }
+      console.error("=== ERRO NO LOGIN ===", error);
+      setError(error.message || "Erro ao fazer login");
     } finally {
       setIsLoading(false);
     }
@@ -62,25 +57,28 @@ export default function LoginPage() {
       <h1 className="text-5xl">Login</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="form-user">
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 w-full max-w-md text-center text-sm">
             {error}
           </div>
         )}
         
         <input 
           {...register("email")} 
-          placeholder="Email"  
+          type="email"
+          placeholder="seu@email.com"  
           className="input-base"
           disabled={isLoading}
+          autoComplete="email"
         />
         {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
         
         <input 
           type="password" 
           {...register("senha")} 
-          placeholder="Senha"  
+          placeholder="Sua senha"  
           className="input-base"
           disabled={isLoading}
+          autoComplete="current-password"
         />
         {errors.senha && <p className="text-red-500 text-sm">{errors.senha.message}</p>}
         
@@ -95,12 +93,3 @@ export default function LoginPage() {
     </section>
   );
 }
-/**
- * ARQUIVOS ALTERADOS:
- * Login e Cadastro, , middlewares, context, utils, services, types todos referente a login e cadastro.
- * Na hora do do token estava sendo buscado nos cookies e não no localstorage, foi alterado. 
- * Mas não foi resolvido, foi melhorado o retorno de erros, o usuário ao cadastrar dá esse erro: "
- * Erro: Invalid `prisma.uSER.create()` invocation: Error converting field "tipo_usuario" of expected non-nullable type "String", found incompatible value of "usuario"."
- * no prisma está enum, e aqui no front também, então não faz sentido esse string a princípio, já que foi igualado os tipos
- * esse ao tentar recadastrar, pq já entrou no BD: "Erro: Invalid `prisma.uSER.create()` invocation: Unique constraint failed on the fields: (`email`)", mas ao tentar fazer login não permite por senha ou email incorreto.
- */
